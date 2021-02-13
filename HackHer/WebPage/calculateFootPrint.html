@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="module" src="calculateFootPrint.js" defer></script>
+    <!-- Custom Styles -->
+	<link href="bootstrap.min.css" rel="stylesheet">
+    <title> Mapping the Future/Planet </title>
+	
+  <body>
+	<div class="container">
+    <br>
+		<h1 class="text-center text-info"> Calculate the Carbon Footprint </h1>
+		<div class="row align-items-center">
+            <div class="col">
+                <form>
+                    <div class="row mb-3">
+                        <label class="col-sm-2 col-form-label text-success" style="font-size:20px;">Housing</label>
+                    </div>
+                    <div class="row mb-3">
+                      <label class="col-sm-4 col-form-label">Electricity (kwh/year)</label>
+                      <div class="col-sm-7">
+                        <input type="text" class="form-control" id="electricity">
+                      </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label">Natural gas (therms/yr)</label>
+                        <div class="col-sm-7">
+                          <input type="text" class="form-control" id="gas">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-2 col-form-label text-success" style="font-size:20px;">Travel</label>
+                    </div>
+                    <div class="row mb-3">
+                      <label class="col-sm-4 col-form-label">Vehicle (km/year)</label>
+                      <div class="col-sm-7">
+                        <input type="text" class="form-control" id="vehicle">
+                      </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label">Flying (km/year)</label>
+                        <div class="col-sm-7">
+                          <input type="text" class="form-control" id="flying">
+                        </div>
+                      </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-2 col-form-label text-success" style="font-size:20px;">Food</label>
+                    </div>
+                    <div class="row mb-3">
+                      <label class="col-sm-4 col-form-label">Meat (kCal/day)</label>
+                      <div class="col-sm-7">
+                        <input type="text" class="form-control" id="meat">
+                      </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-4 col-form-label">Vegetable(kCal/day)</label>
+                        <div class="col-sm-7">
+                          <input type="text" class="form-control" id="vegetable">
+                        </div>
+                    </div>
+                    <a href="carbonfootprint.html" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">Go back main page</a>
+
+                  </form>
+            </div>
+
+            <div class="col">
+                <div class="card border-primary" style="width: 30rem;">
+                    <img class="card-img-top" src="image/Forest-background.png" alt="Card image cap">
+                    <div class="card-body">
+                      <h5 class="card-title">
+                        Calculate the impact of your annual home energy consumption, travel and diet (kgCO2e/year)</h5>
+                      <p class="card-text text-center text-danger" id="result" style="font-size:40px;"> 0 </p>
+                      
+                    </div>
+                    
+                </div>
+            </div>
+          </div>
+	</div>
+
+	<div class="d-flex justify-content-center">
+		<p>© 2021 Copyright Nga Huynh, Mellisa Gatti, Kshiti Mehta, Lilly Campbell All Rights Reserved</p>
+	</div>
+	<!-- JQuery -->
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+	<!-- Bootstrap core JavaScript -->
+	<script type="text/javascript" src="https://cdn.hoxly.com/bootstrap/4/js/bootstrap.min.js"></script>
+  </body>
+</html>

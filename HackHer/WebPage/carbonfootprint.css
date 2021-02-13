@@ -1,0 +1,22 @@
+h1 {
+	color: blue;
+	text-align: center;
+}
+h2 {
+	color: red;
+}
+h3 {
+	color: green;
+}
+.center {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+	width: 15.625%
+}
+.center1 {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+	width: 12%;
+}
