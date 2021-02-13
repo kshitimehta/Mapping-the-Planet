@@ -19,6 +19,9 @@ Platforms used:
 
 2. Tableau
 
+3. HTML/CSS
+
+4. Javascript
 
 **Python**
 
@@ -43,4 +46,12 @@ The world map will show up on the localhost.
 
 
 The Tableau workbook contains 6 worksheets along with a Dashboard integrating all 6 visualizations together.
+
+**Web page**
+
+
+To run the web page:
+
+1. Navigate to WebPage folder 
+2. Run the following command: open carbonfootprint.html
 
