@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+    .selected {
+      /* fill: none; */
+      stroke: black;
+    stroke-linejoin: round;
+    }
+  .states :hover {
+    stroke: black;
+    }
+  .state-borders {
+    fill: none;
+    stroke: white;
+    stroke-width: 0.5px;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    pointer-events: none;
+    }
+  .boundary {
+      fill: #DEB887;
+      stroke: white;
+      stroke-width: 1px; 
+    }
+  .countries {
+    fill: none;
+    stroke: #fff;
+    stroke-linejoin: round;
+  }
+  .countries :hover {
+    stroke: black;
+    stroke-linejoin: round;
+  }
+  .legendThreshold {
+      font-size: 15px;
+      font-family: sans-serif;
+      font-weight: bold;
+  }
+  .caption {
+      fill: #000;
+      text-anchor: start;
+      font-weight: bold;
+  }
+  /* .d3-tip{
+      line-height: 1;
+      padding: 12px;
+      background: rgba(43,43,43, 0.8);
+      color: #fff;
+      border-radius: 2px;
+  } */
+  .hidden {
+      display: none;
+    }
+
+   div.tooltip {
+      color: #222; 
+      background: #fff; 
+      border-radius: 3px; 
+      box-shadow: 0px 0px 2px 0px #a6a6a6; 
+      padding: .2em; 
+      text-shadow: #f5f5f5 0 1px 0;
+      opacity: 0.9; 
+      position: absolute;
+    }
+</style>
+<body>
+    <h1>Emissions by Country over the years</h1>
+    <p>Source: <a href="https://www.kaggle.com/srikantsahu/co2-and-ghg-emission-data">Emissions</a>. This data is from 2008-2017.</p>
+<div id = "map"></div>
+<svg width="960" height="600"></svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.24.0/d3-legend.js"></script>
+<script src="https://d3js.org/topojson.v2.min.js"></script>
+<script>
+// The svg
+
+var width=962,
+height = 502,
+rotated = 90,
+padding = 20,
+initX,
+s=1,
+mouseClicked = false;
+// usa, states;
+
+//for tooltip
+var offsetL = document.getElementById('map').offsetLeft+10;
+var offsetT = document.getElementById('map').offsetTop+10;
+
+
+// Map and projection
+var path = d3.geoPath();
+var projection = d3.geoNaturalEarth()
+    .scale(width / 2 / Math.PI)
+    .translate([width / 2, height / 2]);
+    // .rotate([rotated,0,0]);
+
+var path = d3.geoPath()
+    .projection(projection);
+
+// var zoom = d3.behavior.zoom()
+//          .scaleExtent([1, 20])
+//          .on("zoom", zoomed);
+
+var svg = d3.select("svg")
+    // .on("mousedown", function() {
+    //          d3.event.preventDefault(); 
+    //          //only if scale === 1
+    //          if(s !== 1) return;
+    //            initX = d3.mouse(this)[0];
+    //            mouseClicked = true;
+    //       })
+    //       .on("mouseup", function() {
+    //           if(s !== 1) return;
+    //           rotated = rotated + ((d3.mouse(this)[0] - initX) * 360 / (s * width));
+    //           mouseClicked = false;
+    //       })
+    ,
+    width = +svg.attr("width"),
+    height = +svg.attr("height");
+//tooltip
+ var tooltip = d3.select("#map")
+         .append("div")
+         .attr("class", "tooltip hidden");
+
+// Data and color scale
+var data = d3.map();
+
+var colorScale = d3.scaleThreshold()
+    .domain([31, 51, 201, 501, 1001, 3001, 5001])
+    .range(['#276419','#4d9221', '#a1d76a', '#e6f5d0', '#fde0ef', '#e9a3c9', '#c51b7d', '#8e0152'])
+
+// var zoom = d3.behavior.zoom()
+//          .scaleExtent([1, 10])
+//          .on("zoom", zoomed);
+
+// var colorScaleStates = d3.scaleThreshold()
+//     .domain([2, 11, 21, 51, 101, 301, 501])
+//     .range(['#276419','#4d9221', '#a1d76a', '#e6f5d0', '#fde0ef', '#e9a3c9', '#c51b7d', '#8e0152'])
+
+// Legend
+var g = svg.append("g")
+    .attr("class", "legendThreshold")
+    .attr("transform", "translate(20,20)");
+
+g.append("text")
+    .attr("class", "caption")
+    .attr("x", 0)
+    .attr("y", -6)
+    .text("Total Emissions");
+
+var labels = ['0-30', '31-50', '51-200', '201-500', '501-1000', '1001-3000','3001-5000', '>5000'];
+// var labelsStates = ['0-1', '2-10', '11-20', '21-50', '51-100', '101-300','301-500', '>500'];
+
+var legend = d3.legendColor()
+    .labels(function (d) { return labels[d.i]; })
+    .shapePadding(5)
+    .scale(colorScale);
+svg.select(".legendThreshold")
+    .call(legend)
+    .raise();
+
+// Load external data and boot
+d3.queue()
+    .defer(d3.json, 'world.json')
+    // .defer(d3.json, 'states.json')
+    // .defer(d3.json,'statesIndia.json')
+    // .defer(d3.json,'china_provinces.json')
+    // .defer(d3.json,'colombia_states.json')
+    .defer(d3.csv, 'emission_8-17.csv',function(d) { data.set(d.countries, +d.count); })
+    // .defer(d3.csv, "emission_8-17.csv", function(d) { data.set(d.states, +d.countStates); })
+    .awaitAll(ready);
+
+console.log(data)
+
+function ready(error, results) {
+    if (error) throw error;
+
+    var  countries = results[1].features;
+    // console.log(results[2])
+    // var states = topojson.feature(results[2], results[2].objects.us).features;
+    // var statesIndia = topojson.feature(results[2], results[2].objects.IND_adm1).features;
+    // var statesChina = topojson.feature(results[3], results[3].objects.CHN_adm1).features ;
+    // var statesColombia = topojson.feature(results[4], results[4].objects.COL_adm1).features ;
+    // Draw the map
+    var countryPaths = svg.append("g")
+        .attr("class", "countries")
+        .selectAll('path')
+        .data(countries)
+        .enter().append("path")
+            .attr("fill", function (d){
+                // Pull data for this country
+                d.count = data.get(d.properties.name) || 0;
+                // if (d.count==0){
+                //     console.log(d.properties.name)
+                // }
+               
+                // Set the color
+                return colorScale(d.count);
+            })
+            .on('mouseover',showTooltip)
+            .on('mouseout',function(d,i){
+                tooltip.classed('hidden',true);
+            })
+        //     .on("click", function(d){
+        //         if (d.properties.name == "United States of America"){
+        //         zoomed();
+        //         }
+        //         if (d.properties.name == "India"){
+        //             // console.log("HELoo");
+        //             zoomedIndia();
+        //         }
+        //         // if (d.properties.name == "China"){
+        //         //     // console.log("HELoo");
+        //         //     zoomedChina();
+        //         // }
+        //         if (d.properties.name == "Colombia"){
+        //             // console.log("HELoo");
+        //             zoomedColombia();
+        //         }
+        //     }
+        //    )
+            .attr("d", path);
+
+            // usa = d3.select("#United States of America");
+
+
+// function zoomedIndia(){
+//     var t = d3.transition().duration(800)
+
+// projection.scale(500).translate([width/300, height/1.2 ])
+// // statesIndia.objects.IND_adm1
+// var statePathsIndia = svg.selectAll(".state")
+//   .data(statesIndia)
+
+// var enterStatePathsIndia = svg.append("g")
+//   .attr("class", "states")
+//   .selectAll("boundary")
+//   .data(statesIndia)
+//   .enter().append("path")
+//   .attr("fill", function(d) { 
+      
+//       d.countStates = data.get(d.properties.NAME_1) || 0;
+//         // if (d.count==0){
+//         //     console.log(d.properties.name)
+//         // }
+       
+//         // Set the color
+//         return colorScaleStates(d.countStates);})
+//   .on("click", countryzoom)
+//   .on("mousemove", showTooltipStatesOthers)
+//   .on("mouseout",  function(d,i) {
+//       tooltip.classed("hidden", true);
+//    })
+//   .attr("d", path);
+
+// //   projection.fitExtent(
+// //     [[padding, padding], [width - padding, height - padding]],
+// //     countries
+// // )
+
+
+//   countryPaths.transition(t)
+//     .attr('d', path)
+//     .style('fill', "#DDCD9C")
+
+//     enterStatePathsIndia.transition(t)
+//     .attr('d',path)
+//     .style('opacity',1)
+
+//     statePathsIndia.exit().transition(t)
+//     .attr('d', path)
+//     .style('opacity', 0)
+//     .remove()
+
+//    var legendStates = d3.legendColor()
+//     .labels(function (d) { return labelsStates[d.i]; })
+//     .shapePadding(5)
+//     .scale(colorScaleStates);
+    
+
+//     svg.select(".legendThreshold")
+//     // .enter()
+//     .call(legendStates)
+//     .raise();
+// }
+
+// function zoomedColombia(){
+//     var t = d3.transition().duration(800)
+
+// projection.scale(height*2).translate([width*1.8, height/2 ])
+// // statesIndia.objects.IND_adm1
+// var statePathsCol = svg.selectAll(".state")
+//   .data(statesColombia)
+
+
+//   var legendStates = d3.legendColor()
+//     .labels(function (d) { return labelsStates[d.i]; })
+//     .shapePadding(5)
+//     .scale(colorScaleStates);
+//     svg.select(".legendThreshold")
+//     .call(legendStates)
+//     .raise();
+
+// var enterStatePathsCol = svg.append("g")
+//   .attr("class", "states")
+//   .selectAll("boundary")
+//   .data(statesColombia)
+//   .enter().append("path")
+//   .attr("fill", function(d) { 
+      
+//       d.countStates = data.get(d.properties.NAME_1) || 0;
+//         // if (d.count==0){
+//         //     console.log(d.properties.name)
+//         // }
+       
+//         // Set the color
+//         return colorScaleStates(d.countStates);})
+//   .on("click", countryzoom)
+//   .on("mousemove", showTooltipStatesOthers)
+//   .on("mouseout",  function(d,i) {
+//       tooltip.classed("hidden", true);
+//    })
+//   .attr("d", path);
+
+// //   projection.fitExtent(
+// //     [[padding, padding], [width - padding, height - padding]],
+// //     countries
+// // )
+
+//   countryPaths.transition(t)
+//     .attr('d', path)
+//     .style('fill', "#DDCD9C")
+
+//     enterStatePathsCol.transition(t)
+//     .attr('d',path)
+//     .style('opacity',1)
+
+//     statePathsCol.exit().transition(t)
+//     .attr('d', path)
+//     .style('opacity', 0)
+//     .remove()
+
+// }
+
+
+
+// function zoomed() {
+
+// // d3.select('.selected').classed('selected', false);
+// //   d3.select(this).classed('selected', true); 
+
+// //   d3.json("states.json", function(error, world){
+// //     if(error) return console.error(error);
+
+//     var t = d3.transition().duration(800)
+
+//     projection.scale(height).translate([width*1.35, height ])
+    
+// var statePaths = svg.selectAll(".state")
+//       .data(states)
+
+
+//       var legendStates = d3.legendColor()
+//         .labels(function (d) { return labelsStates[d.i]; })
+//         .shapePadding(5)
+//         .scale(colorScaleStates);
+//     svg.select(".legendThreshold")
+//         .call(legendStates)
+//         .raise();
+
+//     var enterStatePaths = svg.append("g")
+//       .attr("class", "states")
+//     .selectAll("boundary")
+//       .data(states)
+//       .enter().append("path")
+//       .attr("fill", function(d) { 
+//           d.countStates = data.get(d.properties.name) || 0;
+//             // Set the color
+//             return colorScaleStates(d.countStates);})
+//       .on("click", countryzoom)
+//       .on("mousemove", showTooltipStates)
+//       .on("mouseout",  function(d,i) {
+//           tooltip.classed("hidden", true);
+//        })
+//       .attr("d", path);
+
+//     //   projection.fitExtent(
+//     //     [[padding, padding], [width - padding, height - padding]],
+//     //     countries
+//     // )
+
+//       countryPaths.transition(t)
+//         .attr('d', path)
+//         .style('fill', "#DDCD9C")
+
+//         enterStatePaths.transition(t)
+//         .attr('d',path)
+//         .style('opacity',1)
+
+//         statePaths.exit().transition(t)
+//         .attr('d', path)
+//         .style('opacity', 0)
+//         .remove()
+
+// }
+
+// function zoomedChina(){
+//     var t = d3.transition().duration(800)
+
+// projection.scale(400).translate([width/500, height ])
+// // statesIndia.objects.IND_adm1
+// var statePathsChina = svg.selectAll(".state")
+//   .data(statesChina)
+
+
+//   var legendStates = d3.legendColor()
+//     .labels(function (d) { return labelsStates[d.i]; })
+//     .shapePadding(4)
+//     .scale(colorScaleStates);
+//     svg.select(".legendThreshold")
+//     .call(legendStates);
+
+// var enterStatePathsChina = svg.append("g")
+//   .attr("class", "states")
+//   .selectAll("boundary")
+//   .data(statesChina)
+//   .enter().append("path")
+//   .attr("fill", function(d) { 
+      
+//       d.countStates = data.get(d.properties.NAME_1) || 0;
+//         // if (d.count==0){
+//         //     console.log(d.properties.name)
+//         // }
+       
+//         // Set the color
+//         return colorScaleStates(d.countStates);})
+//   .on("click", countryzoom)
+//   .on("mousemove", showTooltipStatesOthers)
+//   .on("mouseout",  function(d,i) {
+//       tooltip.classed("hidden", true);
+//    })
+//   .attr("d", path);
+
+// //   projection.fitExtent(
+// //     [[padding, padding], [width - padding, height - padding]],
+// //     countries
+// // )
+
+//   countryPaths.transition(t)
+//     .attr('d', path)
+//     .style('fill', "black")
+
+//     enterStatePathsChina.transition(t)
+//     .attr('d',path)
+//     .style('opacity',1)
+
+//     statePathsChina.exit().transition(t)
+//     .attr('d', path)
+//     .style('opacity', 0)
+//     .remove()
+
+// }
+
+
+function showTooltip(d){
+    label = d.properties.name;
+    var mouse = d3.mouse(svg.node())
+    .map(function(d) { return parseInt(d); } );
+      tooltip.classed("hidden", false)
+        .attr("style", "left:"+(mouse[0])+"px;top:"+(mouse[1]+offsetT)+"px")
+        .html(label+": "+d.count);
+}
+
+
+// function showTooltipStates(d){
+//     label = d.properties.name;
+//     var mouse = d3.mouse(svg.node())
+//     .map(function(d) { return parseInt(d); } );
+//       tooltip.classed("hidden", false)
+//         .attr("style", "left:"+(mouse[0])+"px;top:"+(mouse[1]+offsetT)+"px")
+//         .html(label+": "+d.countStates);
+// }
+
+// function showTooltipStatesOthers(d){
+//     label = d.properties.NAME_1;
+//     var mouse = d3.mouse(svg.node())
+//     .map(function(d) { return parseInt(d); } );
+//       tooltip.classed("hidden", false)
+//         .attr("style", "left:"+(mouse[0])+"px;top:"+(mouse[1]+offsetT)+"px")
+//         .html(label+": "+d.countStates);
+// }
+
+// function countryzoom(){
+//     var t = d3.transition().duration(800)
+    
+//         projection.scale(width / 2 / Math.PI).translate([width/2,height/2])
+
+//         countryPaths.transition(t)
+//             .attr('d', path)
+//             .style('fill', function (d) { return colorScale(d.properties.count) })
+
+//         svg.selectAll('.states')
+//             .data([])
+//             .exit().transition(t)
+//             .attr('d', path)
+//             .style('opacity', 0)
+//             .remove()
+
+//             var legend = d3.legendColor()
+//             .labels(function (d) { return labels[d.i]; })
+//             .shapePadding(5)
+//             .scale(colorScale);
+//         svg.select(".legendThreshold")
+//             .call(legend);
+
+// }
+
+}
+
+</script>
+</body>

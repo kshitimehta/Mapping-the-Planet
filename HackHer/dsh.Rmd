@@ -1,0 +1,240 @@
+---
+title: "ead"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(csvread)
+library(leaflet)
+library(rjson)
+library(shiny)
+library(rworldmap)
+#library(reticulate)
+```
+```{r}
+setwd("/Users/lillycampbell/Desktop/Climate_Dashboard")
+```
+
+```{r}
+my_data <- read_csv("raw_pull.csv")
+```
+
+
+```{r}
+countrylist<- c("Afghanistan","Albania","Algeria" , "Angola","Argentina", "Australia","Austria","Bahrain","Bangladesh", "Belgium" ,"Benin", "Botswana","Brazil" , "Bulgaria", "Burkina Faso","Burundi", "Cambodia","Canada","Central African Republic", "Chad", "Chile","Colombia","Comoros","Costa Rica","Croatia","Cuba","Czech Republic","Denmark","Djibouti","Dominican Republic" ,"Ecuador","Egypt" ,"El Salvador", "Equatorial Guinea","Eritrea","Ethiopia","Finland","Gabon","Gambia","Germany","Ghana","Greece" ,"Guatemala","Guinea","Haiti","Honduras" ,"Hungary" ,"Iceland","India","Indonesia", "Iraq","Ireland","Israel","Jamaica","Japan","Jordan", "Kenya","Kuwait","Lebanon","Lesotho","Liberia","Madagascar" ,"Malawi","Malaysia","Mali","Mauritania","Mauritius","Mexico","Mongolia","Montenegro", "Morocco" ,"Mozambique","Namibia","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","Norway","Oman","Pakistan","Panama","Paraguay","Peru","Philippines","Poland","Portugal","Reunion","Romania","Rwanda","Saudi Arabia","Senegal","Serbia","Sierra Leone","Singapore","Slovenia", "Somalia","South Africa","Spain","Sri Lanka","Sudan","Swaziland" ,"Sweden","Switzerland","Taiwan","Thailand", "Togo" ,"Tunisia","Turkey","Uganda","United Kingdom","Uruguay", "Venezuela","Zambia","Zimbabwe")
+```
+
+```{r}
+print(countrylist[[2]])
+```
+```{r}
+emissions_df <- data.frame(matrix(ncol = 116, nrow=0))
+colnames(emissions_df)<- countrylist
+```
+
+```{r}
+
+for (i in range(1:116)){
+new_vec <- countrylist[[i]]
+new_vec<- my_data %>% 
+  filter(Nation == new_vec) %>% 
+  select(total_emissions_tons) %>% 
+  distinct(total_emissions_tons) 
+  
+}
+  
+```
+
+
+```{r}
+
+vari <- my_data %>% 
+  filter(Nation == counts[[1]]) %>% 
+  select(total_emissions_tons) %>% 
+  distinct(total_emissions_tons)
+```
+
+
+```{r}
+ iterations = 10
+ variables = 2
+
+ output <- matrix(ncol=variables, nrow=iterations)
+
+ for(i in 1:iterations){
+  output[i,] <- runif(2)
+
+ }
+
+ output
+```
+
+
+```{r}
+i <- 0 
+mydf <- data.frame()
+for (i in range(1:116)) {
+  i<-i+1
+  mylist<- lapply(my_data %>% 
+    filter(Nation == counts[[i]]) %>% 
+    select(total_emissions_tons) %>% 
+    distinct(total_emissions_tons))
+    
+}
+```
+
+
+
+```{r}
+#create a dataframe with empty columns of the country
+emissions <- data.frame(countries)
+```
+
+
+```{r}
+#sample vector 
+emission_vector <- my_data %>% 
+  filter(Nation == "Afghanistan") %>% 
+  select(total_emissions_tons) %>% 
+  distinct(total_emissions_tons) %>% 
+  rename("Afghanistan" = total_emissions_tons)
+```
+
+```{r}
+#create for loop to iterate through countries 
+#https://stackoverflow.com/questions/13442461/populating-a-data-frame-in-r-in-a-loop
+emissions <- list() # create an empty list 
+  
+for(i in 1:12){
+  emission_vector <- numeric(116) #preallocate numeric vector
+  for(j in countries){
+    emission_vector[j]<- my_data %>% 
+    filter(Nation == j) %>% 
+    select(total_emissions_tons) %>% 
+    distinct(total_emissions_tons) 
+  }
+  emissions[[i]] <- emission_vector 
+}
+df <- do.call("rbind",emissions)
+```
+
+
+
+
+```{r}
+emissions <- my_data %>% 
+  select(ID, Nation, Year, total_emissions_tons)
+
+#head(emissions)
+```
+```{r}
+library(reshape2)
+```
+
+```{r}
+emissions2 <- melt(emissions, id = c("ID","Nation", "total_emissions_tons")) 
+
+head(emissions2)
+```
+
+- collect lat and long, join to df
+
+
+
+```{r}
+library(geojsonio)
+countries <-geojsonio::geojson_read("globe.json", what = "sp")
+
+class(countries)
+```
+```{r}
+name(cou
+```
+
+
+```{r}
+m <- leaflet(countries) %>% 
+  setView(10,10,10,10) %>% 
+  addProviderTiles("MapBox", options = providerTileOptions(id = "mapbox.light",
+                                              accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
+```
+
+```{r}
+m %>% addPolygons()
+```
+
+```{r}
+library(rworldmap)
+```
+
+```{r}
+my_simple_data <- my_data %>% 
+  group_by(Nation) %>% 
+  select(-c(AverageTemperature, AverageTemperatureUncertainty)) %>% 
+  group_by(Nation, Year) %>% 
+  filter(row_number()==1) %>% 
+  filter(Year == 2007)
+
+```
+
+```{r}
+my_simple_data.map <- joinCountryData2Map(my_simple_data, joinCode = "NAME", nameJoinColumn = "Nation")
+```
+
+
+```{r}
+bins <- c(0, 10, 20, 50, 100, 200, 500, 1000, Inf)
+pal <- colorBin("YlOrRd", domain = countries$pop_est, bins = bins)
+
+```
+```{r}
+m %>% addPolygons(
+  fillColor = ~pal(pop_est),
+  weight = 2,
+  opacity = 1,
+  color = "white",
+  dashArray = "3",
+  fillOpacity = 0.7)
+```
+```{r}
+library(rgdal)
+library(threejs)
+
+# Download MODIS 16-day 1 degree Vegetation Index data manually from
+# http://neo.sci.gsfc.nasa.gov/view.php?datasetId=MOD13A2_M_NDVI
+# or use the following cached copy from May 25, 2014
+cache <- tempfile()
+writeBin(
+  readBin(
+    url("http://illposed.net/nycr2015/MOD13A2_E_NDVI_2014-05-25_rgb_360x180.TIFF",
+        open="rb"),
+    what="raw", n=1e6),
+  con=cache)
+x <- readGDAL(cache)
+# Obtain lat/long coordinates and model values as a data.frame
+x <- as.data.frame(cbind(coordinates(x), x@data[,1]))
+names(x) <- c("long","lat","value")
+
+# Remove ocean areas and NA values
+x <- x[x$value < 255,]
+x <- na.exclude(x)
+
+# Cut the values up into levels corresponding to the
+# 99th, 95th, 90th, percentiles and then all the rest.
+x$q <- as.numeric(
+         cut(x$value,
+             breaks=quantile(x$value, probs=c(0,0.90,0.95,0.99,1)),
+                            include.lowest=TRUE))
+
+# Colors for each level
+col = c("#0055ff","#00aaff","#00ffaa","#aaff00")[x$q]
+
+# bling out the data
+globejs(lat=x$lat, long=x$long,
+         val=x$q^3,    # Bar height 
+         color=col,
+         pointsize=0.5,
+         atmosphere=TRUE)
+```
+
